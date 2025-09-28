@@ -78,9 +78,9 @@ const HomePage = () => {
             <section className="ctaSection">
                 <h2>Get Started Today!</h2>
                 <div className="ctaButtons">
-                    <a href="/student" className="buttonPrimary">I'm a Student</a>
-                    <a href="/institution" className="buttonSecondary">I'm an Institution</a>
-                    <a href="/verifier" className="buttonSecondary">Verify a Credential</a>
+                    <a href="/login-signup" className="buttonPrimary">I'm a Student</a>
+                    <a href="/institute-login" className="buttonSecondary">I'm an Institution</a>
+                    <a href="/verifier-login" className="buttonSecondary">Verify a Credential</a>
                 </div>
             </section>
 

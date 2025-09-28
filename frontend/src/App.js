@@ -21,6 +21,7 @@ import RevokeCredentialForm from './components/Institution/RevokeCredential.js';
 import VerifierDashboard from './components/Verifier/VerifyCredential';
 import VerifierDash from './components/Verifier/VerifierDashboard.js';
 import StudentDashboard from './components/Student/StudentDashboard.js';
+import InstituteInfo from './components/Student/Institute-info.js';
 
 function App() {
     return (
@@ -56,6 +57,7 @@ function App() {
                     <Route path="/verifier-credential" element={<VerifierDashboard/>}></Route>
                     <Route path="/verifier-dashboard" element={<VerifierDash/>}></Route>
                     <Route path="/student-dashboard" element={<StudentDashboard/>}></Route>
+                    <Route path="/institute-info" element={<InstituteInfo/>}></Route>
                     {/* Add more dummy routes for StudentDashboard, etc. */}
                 </Routes>
             </div>

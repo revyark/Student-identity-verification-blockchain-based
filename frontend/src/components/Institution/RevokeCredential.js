@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import './IssueCredentialForm.css'; // Import the new CSS file
 
-const IssueCredentialForm = () => {
+const RevokeCredentialForm = () => {
     const [studentAddress, setStudentAddress] = useState('');
     const [credentialType, setCredentialType] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
@@ -65,7 +65,7 @@ const IssueCredentialForm = () => {
 
     return (
         <div className="credential-form-container">
-            <h2>Issue New Credential (DUMMY)</h2>
+            <h2>Revoke Credential (DUMMY)</h2>
             <form onSubmit={handleIssueCredential}>
                 <div className="form-group">
                     <label>Student Wallet Address:</label>
@@ -87,24 +87,13 @@ const IssueCredentialForm = () => {
                         placeholder="e.g., Bachelor of Technology"
                     />
                 </div>
-                <div className="form-group">
-                    <label>Upload Credential Document (e.g., PDF):</label>
-                    <input
-                        type="file"
-                        onChange={handleFileChange}
-                        required
-                        accept=".pdf,.doc,.docx"
-                    />
-                    {selectedFile && <p className="file-info">Selected: {selectedFile.name}</p>}
-                    {mockIpfsHash && <p className="ipfs-info">Mock IPFS Hash: {mockIpfsHash}</p>}
-                </div>
 
                 <button
                     type="submit"
                     disabled={isProcessing}
                     className="submit-button"
                 >
-                    {isProcessing ? 'Processing...' : 'Issue Dummy Credential'}
+                    {isProcessing ? 'Processing...' : 'Revoke Credential'}
                 </button>
             </form>
 
@@ -117,10 +106,10 @@ const IssueCredentialForm = () => {
                 </p>
             )}
             <p className="note">
-                Note: This is a dummy form. It does not interact with a blockchain or actual IPFS.
+                This is a dummy form. It does not interact with a blockchain or actual IPFS.
             </p>
         </div>
     );
 };
 
-export default IssueCredentialForm;
+export default RevokeCredentialForm;
