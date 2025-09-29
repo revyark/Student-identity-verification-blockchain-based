@@ -3,8 +3,13 @@ import { getInstituteProfile, updateInstituteProfile, getInstituteStats } from "
 import { issueCredential, revokeCredential, uploadCredentialFile, listStudentCredentials } from "../controllers/Credentials.controller.js";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 
-const upload = multer({ dest: path.join('uploads') });
+const uploadDir = path.join('uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+const upload = multer({ dest: uploadDir });
 
 const router = Router();
 

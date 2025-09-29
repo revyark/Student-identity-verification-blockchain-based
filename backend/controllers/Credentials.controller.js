@@ -102,7 +102,11 @@ const uploadCredentialFile = asyncHandler(async (req, res) => {
   }
   try {
     const uploadResult = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'credentials'
+      folder: 'credentials',
+      resource_type: 'auto',
+      use_filename: true,
+      unique_filename: true,
+      overwrite: false
     });
     // cleanup temp file
     fs.unlink(req.file.path, () => {});
@@ -115,8 +119,9 @@ const uploadCredentialFile = asyncHandler(async (req, res) => {
       created_at: uploadResult.created_at
     });
   } catch (err) {
-    res.status(500);
-    throw new Error("Cloudinary upload failed");
+    // Include error details for easier debugging
+    console.error('Cloudinary upload error:', err && err.message ? err.message : err);
+    return res.status(500).json({ message: 'Cloudinary upload failed', details: err && err.message ? err.message : String(err) });
   }
 });
 
@@ -125,6 +130,7 @@ export { uploadCredentialFile };
 // Get credentials for a student by wallet or id
 const listStudentCredentials = asyncHandler(async (req, res) => {
   const { studentId } = req.params; // can be walletAddress or Mongo _id
+  const { status } = req.query; // optional filter: issued/revoked
   let finder = { studentWalletAddress: studentId };
   // allow query by student Mongo _id by joining via Student
   if (studentId && studentId.length === 24) {
@@ -137,7 +143,12 @@ const listStudentCredentials = asyncHandler(async (req, res) => {
     } catch (_) {}
   }
 
-  const creds = await Credential.find(finder).select('-__v');
+  if (status && (status === 'issued' || status === 'revoked')) {
+    finder.status = status;
+  }
+  const creds = await Credential.find(finder)
+    .select('-__v')
+    .sort({ issueDate: -1 });
   return res.status(200).json({ credentials: creds });
 });
 
