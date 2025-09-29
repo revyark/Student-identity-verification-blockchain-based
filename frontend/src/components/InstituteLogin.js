@@ -1,9 +1,9 @@
- import React, { useState } from 'react';
- import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
 
 export default function InstituteLogin() {
-    const navigate=useNavigate();
+    const navigate = useNavigate();
 
     const [formDetails, setFormDetails] = useState({
         email: '',
@@ -13,12 +13,26 @@ export default function InstituteLogin() {
     const handleOnSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Handle the login logic here
-            console.log('Institute Login Data:', formDetails);
+            const response = await fetch('http://localhost:8000/api/login/institute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formDetails),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem('accessToken', data.accessToken);
+                localStorage.setItem('institute', JSON.stringify(data.institute));
+                localStorage.setItem('userType', 'institute');
+                navigate('/institution-dummy');
+            } else {
+                alert(data.message || 'Login failed');
+            }
         } catch (err) {
-            console.log(err);
+            console.error('Login error:', err);
+            alert('Login error');
         }
-        navigate("/institution-dummy");
     };
 
     const handleOnChange = (e) => {

@@ -43,11 +43,24 @@ export default function VerifierSignup() {
         setCurrentPage(1);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle the signup logic here
-        console.log('Verifier Signup Data:', formData);
-        alert('Signup successful! Check console for data.');
+        try{
+            const response = await fetch('http://localhost:8000/api/register/verifier',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+            if(response.ok){
+                alert('Signup successful!');
+            }else{
+                alert(data.message || 'Signup failed');
+            }
+        }catch(err){
+            console.log(err);
+            alert('Signup error');
+        }
     };
 
     return (

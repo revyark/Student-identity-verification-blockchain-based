@@ -1,24 +1,21 @@
-# TODO for Student Signup Wallet Addition
+# TODO for Backend Institute Registration Validation
 
 ## Overview
-Update Signup.js (student signup) to add wallet address input and connect wallet button using MetaMask.
-- Add walletAddress to formData.
-- Import initWeb3.
-- Add connectWallet async function.
-- Add form group for wallet address input and connect button.
-- Update handleSubmit to log walletAddress.
+Update Registering.controller.js to validate instituteCode against check_verfied_institution.csv if instituteType is 'university'.
+- Install csv-parser if needed.
+- Read CSV file and check if instituteCode exists.
+- If not university or code exists, proceed; else, throw error.
 
 ## Steps
-- [x] Step 1: Add walletAddress to formData state.
-- [x] Step 2: Import initWeb3 from utils/web3.js.
-- [x] Step 3: Add connectWallet async function to set walletAddress.
-- [x] Step 4: Add form group for Wallet Address input and Connect Wallet button in JSX.
-- [x] Step 5: Update handleSubmit to include walletAddress in log.
-- [ ] Step 6: Test wallet connection.
+- [x] Step 1: Install csv-parser dependency.
+- [x] Step 2: Import fs and csv-parser in controller.
+- [x] Step 3: In registerInstitute, if instituteType === 'university', read CSV and validate instituteCode.
+- [x] Step 4: If code not found, throw error 'Invalid institute code for university'.
+- [x] Step 5: Test the registration endpoint.
 
 ## Dependencies
-- web3.js for MetaMask.
+- csv-parser for CSV reading.
 
 ## Follow-up
-- Verify wallet address is captured and logged.
+- Verify validation works for university type.
 - Update TODO.md as steps complete.

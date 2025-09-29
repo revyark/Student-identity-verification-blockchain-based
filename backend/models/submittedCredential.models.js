@@ -1,32 +1,27 @@
 import mongoose,{Schema} from 'mongoose';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
-const instituteCredsSchema=new Schema(
+const submittedCredentialSchema=new Schema(
     {
         _id:{
             type:String,
             required:true,
             unique:true,
-            primarykey:true
         },
-        instituteId:{
+        studentWalletAddress:{
             type:String,
             required:true
         },
-        no_ofCredentialsIssued:{
-            type:Number,
+        verifierWalletAddress:{
+            type:String,
             required:true
         },
-        no_ofCredentialsRevoked:{
-            type:Number,
+        credentialHash:{
+            type:String,
             required:true
         },
-        no_ofVerifiedCredentials:{
-            type:Number,
-            required:true
-        },
-        no_ofPendingVerifications:{
-            type:Number,
+        submissionDate:{
+            type:Date,
             required:true
         },
         cloudinaryUrl: {
@@ -44,9 +39,9 @@ const instituteCredsSchema=new Schema(
         mimeType: {
             type: String,
             required: true
-       }
-    },
-    {timestamps:true
+       },
+    },{
+        timestamps:true
     }
 );
-export const InstituteCreds=mongoose.model('InstituteCreds',instituteCredsSchema);
+export const SubmittedCredential=mongoose.model('SubmittedCredential',submittedCredentialSchema);

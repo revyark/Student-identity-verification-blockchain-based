@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Signup.css';
 import initWeb3 from '../utils/web3';
 
 export default function InstituteSignup() {
+    const navigate = useNavigate();
     const [currentPage, setCurrentPage] = useState(1);
     const [formData, setFormData] = useState({
         instituteName: '',
+        instituteType: '',
         email: '',
         password: '',
         walletAddress: '',
-        phone: '',
+        phonenumber: '',
         addressLine1: '',
         addressLine2: '',
         region: '',
@@ -35,7 +38,7 @@ export default function InstituteSignup() {
     };
 
     const handleNext = () => {
-        if (currentPage === 1 && (!formData.instituteName || !formData.email || !formData.password)) {
+        if (currentPage === 1 && (!formData.instituteName || !formData.instituteType || !formData.email || !formData.password || !formData.walletAddress)) {
             alert('Please fill in all required fields on Page 1.');
             return;
         }
@@ -46,11 +49,27 @@ export default function InstituteSignup() {
         setCurrentPage(1);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle the signup logic here
-        console.log('Institute Signup Data:', formData);
-        alert('Signup successful! Check console for data.');
+        try {
+            const response = await fetch('http://localhost:8000/api/register/institute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert('Signup successful!');
+                navigate('/institute-login');
+            } else {
+                alert(data.message || 'Signup failed');
+            }
+        } catch (error) {
+            console.error('Signup error:', error);
+            alert('Signup error');
+        }
     };
 
     return (
@@ -63,6 +82,14 @@ export default function InstituteSignup() {
                         <input type="text" name="instituteName" value={formData.instituteName} onChange={handleChange} required />
                     </div>
                     <div className="form-group">
+                        <label>Institute Type:</label>
+                        <select name="instituteType" value={formData.instituteType} onChange={handleChange} required>
+                            <option value="">Select Type</option>
+                            <option value="university">University</option>
+                            <option value="college">College</option>
+                        </select>
+                    </div>
+                    <div className="form-group">
                         <label>Email:</label>
                         <input type="email" name="email" value={formData.email} onChange={handleChange} required />
                     </div>
@@ -72,7 +99,7 @@ export default function InstituteSignup() {
                     </div>
                     <div className="form-group">
                         <label>Wallet Address:</label>
-                        <input type="text" name="walletAddress" value={formData.walletAddress} onChange={handleChange} placeholder="Enter or connect MetaMask" />
+                        <input type="text" name="walletAddress" value={formData.walletAddress} onChange={handleChange} required placeholder="Enter or connect MetaMask" />
                         <button type="button" onClick={connectWallet} className="connect-button">Connect Wallet</button>
                     </div>
                     <button type="button" onClick={handleNext} className="next-button">Next</button>
@@ -83,7 +110,7 @@ export default function InstituteSignup() {
                     <h2>Institute Signup - Page 2</h2>
                     <div className="form-group">
                         <label>Phone Number:</label>
-                        <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required />
+                        <input type="tel" name="phonenumber" value={formData.phonenumber} onChange={handleChange} required />
                     </div>
                     <div className="form-group">
                         <label>Address Line 1:</label>

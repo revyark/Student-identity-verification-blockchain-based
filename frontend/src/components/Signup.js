@@ -29,10 +29,35 @@ export default function Signup() {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Student Signup Data:', formData);
-        alert('Signup successful! Check console for data.');
+        try{
+            const dateofbirth = `${formData.birthYear}-${String(months.indexOf(formData.birthMonth)+1).padStart(2,'0')}-${String(formData.birthDay).padStart(2,'0')}`;
+            const payload = {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                Username: formData.Username,
+                email: formData.email,
+                phone_no: formData.phone_no || formData.phone,
+                password: formData.password,
+                walletAddress: formData.walletAddress,
+                dateofbirth
+            };
+            const response = await fetch('http://localhost:8000/api/register/student',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if(response.ok){
+                alert('Signup successful!');
+            }else{
+                alert(data.message || 'Signup failed');
+            }
+        }catch(err){
+            console.log(err);
+            alert('Signup error');
+        }
     };
     const months = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -55,7 +80,7 @@ export default function Signup() {
                 </div>
                 <div className="form-group">
                     <label>Username</label>
-                    <input type="text" name="lastName" value={formData.Username} onChange={handleChange} required />
+                    <input type="text" name="Username" value={formData.Username} onChange={handleChange} required />
                 </div>
                 <div className="form-group">
                     <label>Email *</label>
@@ -65,7 +90,7 @@ export default function Signup() {
                     <label>Phone</label>
                     <div className="phone-input">
                         <span>+1</span>
-                        <input type="text" name="phone" value={formData.phone} onChange={handleChange} />
+                        <input type="text" name="phone_no" value={formData.phone_no} onChange={handleChange} />
                     </div>
                 </div>
 

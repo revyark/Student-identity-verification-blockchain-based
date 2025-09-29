@@ -41,6 +41,9 @@ const CredentialSchema=new Schema(
             type:String,
             required:true
         },
+        cloudinaryUrl:{
+            type:String
+        },
         status:{
             type:String,
             required:true,
@@ -49,7 +52,8 @@ const CredentialSchema=new Schema(
         credentialScore:{
             type:Number,
             default:0
-        }
+        },
+        
     }
 );
 

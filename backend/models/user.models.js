@@ -1,23 +1,22 @@
 import mongoose,{Schema} from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-const userSchema=new Schema(
+const studentSchema=new Schema(
     {
-        _id:{
+        _studentId:{
             type:String,
             required:true,
-            unique:true,
-            primarykey:true
+            unique:true
         },
-        firstname:{
+        firstName:{
             type:String,
             required:true
         },
-        lastname:{
+        lastName:{
             type:String,
             required:true
         },
-        username:{
+        Username:{
             type:String,
             required:true,
             unique:true
@@ -31,7 +30,7 @@ const userSchema=new Schema(
             type:String,
             required:true
         },
-        phonenumber:{
+        phone_no:{
             type:String,
             required:true
         },
@@ -51,4 +50,31 @@ const userSchema=new Schema(
     },
     {timestamps:true}
 );
-export const User=mongoose.model('User',userSchema);
+
+studentSchema.methods.generateAccessToken = function(){
+    return jwt.sign(
+        {
+            _id: this._id,
+            email: this.email,
+            Username: this.Username
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY || '1d'
+        }
+    )
+}
+
+studentSchema.methods.generateRefreshToken = function(){
+    return jwt.sign(
+        {
+            _id: this._id
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '10d'
+        }
+    )
+}
+
+export const Student=mongoose.model('Student',studentSchema);

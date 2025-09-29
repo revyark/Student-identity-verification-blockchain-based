@@ -87,6 +87,7 @@ const HomePage = () => {
             {/* You could add a WalletConnector here if you want it prominent on the landing page */}
             {/* <WalletConnector /> */}
         </div>
+
     );
 };
 

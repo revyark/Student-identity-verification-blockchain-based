@@ -49,14 +49,89 @@ const VerifierDash = () => {
   };
 
   // Save changes
-  const handleSave = () => {
-    setInstitute(formData); // Update institute details
-    setIsEditing(false); // Exit edit mode
+  const handleSave = async () => {
+    try {
+      const verifierData = JSON.parse(localStorage.getItem('verifier'));
+      const id = verifierData?._verifierId || verifierData?._id;
+      if (!verifierData || !id) {
+        alert('Verifier ID not found. Cannot save profile.');
+        return;
+      }
+      const verifierId = id;
+      const updateData = {
+        name: formData.name,
+        email: formData.email,
+        location: formData.address,
+        contact: formData.phone,
+        description: formData.description || ''
+      };
+      const response = await fetch(`http://localhost:8000/api/verifier/${encodeURIComponent(verifierId)}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        const mapped = {
+          name: updated.name || '',
+          code: verifierData._verifierId || verifierId,
+          address: updated.location || '',
+          email: updated.email || '',
+          phone: updated.contact || '',
+          website: formData.website || '',
+          verified: true,
+        };
+        setInstitute(mapped);
+        setFormData(mapped);
+        setIsEditing(false);
+        alert('Profile updated successfully');
+      } else {
+        alert('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Error updating profile');
+    }
   };
   const handleVerify = (e) => {
     e.preventDefault();
     navigate('/verifier-credential');
   }
+    useEffect(() => {
+      const fetchProfile = async () => {
+        try {
+          const verifierData = JSON.parse(localStorage.getItem('verifier'));
+          const id = verifierData?._verifierId || verifierData?._id;
+          if (!verifierData || !id) {
+            return;
+          }
+          const verifierId = id;
+          const response = await fetch(`http://localhost:8000/api/verifier/${encodeURIComponent(verifierId)}/profile`);
+          if (response.ok) {
+            const data = await response.json();
+            const mappedData = {
+              name: data.name || '',
+              code: verifierData._verifierId || verifierId,
+              address: data.location || '',
+              email: data.email || '',
+              phone: data.contact || '',
+              website: formData?.website || '',
+              verified: true,
+            };
+            setInstitute(mappedData);
+            setFormData(mappedData);
+          } else {
+            const errText = await response.text();
+            console.error('Fetch verifier profile failed:', errText);
+            alert(`Failed to fetch verifier profile (${response.status}): ${errText}`);
+          }
+        } catch (err) {
+          console.error('Failed to fetch verifier profile', err);
+          alert('Failed to fetch verifier profile, check console for details');
+        }
+      };
+      fetchProfile();
+    }, []);
     useEffect(() => {
       const interval = setInterval(() => {
         setStats((prev) => ({

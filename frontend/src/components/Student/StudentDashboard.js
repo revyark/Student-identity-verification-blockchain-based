@@ -1,23 +1,52 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./StudentDashboard.css";
 import { useNavigate } from "react-router-dom";
 
 
 const StudentDashboard = () => {
-  // Mock student documents (replace later with backend or blockchain fetch)
-  const [documents] = useState([
-    { id: 1, name: "Marksheet - 10th Grade", status: "Verified", date: "2023-09-10" },
-    { id: 2, name: "Marksheet - 12th Grade", status: "Verified", date: "2023-09-12" },
-    { id: 3, name: "Degree Certificate", status: "Pending", date: "2025-08-20" },
-  ]);
+  const [documents, setDocuments] = useState([]);
+  const navigate=useNavigate();
+
+  useEffect(() => {
+    const fetchCredentials = async () => {
+      try {
+        const studentData = JSON.parse(localStorage.getItem('student'));
+        if (!studentData) return;
+        const wallet = studentData.walletAddress;
+        // Use institute route to list credentials by student wallet; institute id is not used in lookup
+        const institute = JSON.parse(localStorage.getItem('institute') || '{}');
+        const instituteId = institute?._id || 'institute';
+        const resp = await fetch(`http://localhost:8000/api/institute/${encodeURIComponent(instituteId)}/credentials/student/${encodeURIComponent(wallet)}`);
+        const json = await resp.json();
+        if (resp.ok) {
+          const mapped = (json.credentials || []).map((c, idx) => ({
+            id: c.credentialHash || c._id || idx + 1,
+            name: c.credentialName,
+            status: c.status === 'revoked' ? 'Revoked' : 'Verified',
+            date: c.issueDate ? new Date(c.issueDate).toISOString().slice(0,10) : '—',
+            url: c.cloudinaryUrl || ''
+          }));
+          setDocuments(mapped);
+        } else {
+          console.error('Failed to fetch student credentials:', json);
+        }
+      } catch (err) {
+        console.error('Error fetching student credentials', err);
+      }
+    };
+    fetchCredentials();
+  }, []);
 
   const verifiedDocs = documents.filter((doc) => doc.status === "Verified").length;
-  const navigate=useNavigate();
   const handleUpload=()=>{
     navigate('/student-upload');
   }
   const handleInstituteInfo=()=>{
     navigate('/institute-info');
+  }
+  const handleDownload = (url) => {
+    if (!url) return;
+    window.open(url, '_blank');
   }
   return (
     <div className="student-dashboard">
@@ -48,7 +77,8 @@ const StudentDashboard = () => {
               <th>ID</th>
               <th>Document Name</th>
               <th>Status</th>
-              <th>Date Verified</th>
+              <th>Date Issued</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -57,7 +87,12 @@ const StudentDashboard = () => {
                 <td>{doc.id}</td>
                 <td>{doc.name}</td>
                 <td className={doc.status.toLowerCase()}>{doc.status}</td>
-                <td>{doc.status === "Verified" ? doc.date : "—"}</td>
+                <td>{doc.date}</td>
+                <td>
+                  <button className="buttonPrimary-student" disabled={!doc.url} onClick={() => handleDownload(doc.url)}>
+                    {doc.url ? 'Download' : 'N/A'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

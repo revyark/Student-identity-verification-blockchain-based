@@ -6,8 +6,7 @@ const verifierSchema=new Schema(
         _verifierId:{
             type:String,
             required:true,
-            unique:true,
-            primarykey:true
+            unique:true
         },
         verifierName:{
             type:String,
@@ -29,7 +28,7 @@ const verifierSchema=new Schema(
         },
         phonenumber:{
             type:String,
-            required:true
+            required:true 
         },
         city:{
             type:String,

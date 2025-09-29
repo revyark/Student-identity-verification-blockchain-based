@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 const connectDB = async() => {
     try {
-        const DB_NAME='credential verification database';
+        const DB_NAME='credential';
         const connectionInscance = await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`)
 
         console.log(`\nMongoDB connected !! DB HOST : ${connectionInscance.connection.host}`);

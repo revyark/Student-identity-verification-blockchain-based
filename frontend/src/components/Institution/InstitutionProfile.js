@@ -1,20 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./InstituteProfile.css"; // Import CSS file
 
 const InstituteProfile = () => {
-  // Dummy Data (replace with API data later)
-  const [institute, setInstitute] = useState({
-    name: "Indian Institute of Technology, Delhi",
-    code: "IITD123",
-    address: "Hauz Khas, New Delhi - 110016",
-    email: "contact@iitd.ac.in",
-    phone: "+91-11-2659-7135",
-    website: "https://home.iitd.ac.in/",
-    verified: true,
-  });
-
+  const [institute, setInstitute] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(institute);
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const instituteData = JSON.parse(localStorage.getItem('institute'));
+        if (!instituteData || !instituteData._instituteId) {
+          alert('Institute ID not found. Please log in again.');
+          return;
+        }
+        const instituteId = instituteData._instituteId;
+        const response = await fetch(`http://localhost:8000/api/institute/${instituteId}/profile`);
+        if (response.ok) {
+          const data = await response.json();
+          // Map backend data to formData with required fields
+          const mappedData = {
+            name: data.name || '',
+            code: instituteId, // InstituteCode is the InstituteId
+            address: data.location || '',
+            email: data.email || '',
+            phone: data.contact || '',
+            verified: true // Status is always verified
+          };
+          setInstitute(mappedData);
+          setFormData(mappedData);
+        } else {
+          alert('Failed to fetch profile');
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        alert('Error fetching profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   // Handle input change
   const handleChange = (e) => {
@@ -23,10 +51,58 @@ const InstituteProfile = () => {
   };
 
   // Save changes
-  const handleSave = () => {
-    setInstitute(formData); // Update institute details
-    setIsEditing(false); // Exit edit mode
+  const handleSave = async () => {
+    try {
+      const instituteData = JSON.parse(localStorage.getItem('institute'));
+      if (!instituteData || !instituteData._instituteId) {
+        alert('Institute ID not found. Cannot save profile.');
+        return;
+      }
+      const instituteId = instituteData._instituteId;
+      // Map formData to backend expected format
+      const updateData = {
+        name: formData.name,
+        email: formData.email,
+        location: formData.address,
+        contact: formData.phone,
+      };
+      const response = await fetch(`http://localhost:8000/api/institute/${instituteId}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      });
+      if (response.ok) {
+        const updatedProfile = await response.json();
+        // Map back to institute format
+        const mappedUpdated = {
+          name: updatedProfile.name || '',
+          code: instituteId,
+          address: updatedProfile.location || '',
+          email: updatedProfile.email || '',
+          phone: updatedProfile.contact || '',
+          website: formData.website || '',
+          verified: true
+        };
+        setInstitute(mappedUpdated);
+        setFormData(mappedUpdated);
+        setIsEditing(false);
+        alert('Profile updated successfully');
+      } else {
+        alert('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Error updating profile');
+    }
   };
+
+  if (loading) {
+    return <div className="institute-profile"><p>Loading profile...</p></div>;
+  }
+
+  if (!institute) {
+    return <div className="institute-profile"><p>Failed to load profile.</p></div>;
+  }
 
   return (
     <div className="institute-profile">
@@ -36,7 +112,7 @@ const InstituteProfile = () => {
             <input
               type="text"
               name="name"
-              value={formData.name}
+              value={formData.name || ''}
               onChange={handleChange}
               className="editing-input"
             />
@@ -105,26 +181,6 @@ const InstituteProfile = () => {
           )}
         </p>
 
-        <p>
-          <strong>Website:</strong>{" "}
-          {isEditing ? (
-            <input
-              type="url"
-              name="website"
-              value={formData.website}
-              onChange={handleChange}
-              className="editing-input"
-            />
-          ) : (
-            <a
-              href={institute.website}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {institute.website}
-            </a>
-          )}
-        </p>
 
         <p>
           <strong>Status:</strong>{" "}

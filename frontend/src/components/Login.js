@@ -3,49 +3,64 @@ import { useNavigate } from 'react-router-dom';
 import './Login.css';
 export default function Login() {
     const navigate=useNavigate();
-    const handleOnClick=(e)=>{
-        e.preventDefault();
-        navigate("/institution-dummy");
-    }
     const [formDetails,setFormDetails]=useState({
-        username:'',
+        email:'',
         password:'',
     })
     const handleOnSubmit=async(e)=>{
         e.preventDefault();
         try{
-            setFormDetails({...formDetails,[e.target.name]:e.target.value});
+            const response = await fetch('http://localhost:8000/api/login/student', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formDetails),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem('accessToken', data.accessToken);
+                localStorage.setItem('student', JSON.stringify(data.student));
+                localStorage.setItem('userType', 'student');
+                navigate('/student-dashboard');
+            } else {
+                alert(data.message || 'Login failed');
+            }
         }catch(err){
             console.log(err);
+            alert('Login error');
         }
-        navigate('/student-dashboard');
     }
     const handleOnChange=(e)=>{
         setFormDetails({...formDetails,[e.target.name]:e.target.value});
     }
   return (
     <div className="login-form-container">
-        <h2>Login Student Form</h2>
+        <h2>Student Login</h2>
         <form onSubmit={handleOnSubmit}>
             <div className="form-group">
-                    <label>Username:</label>
+                    <label>Email:</label>
                     <input
-                        type="text"
+                        type="email"
+                        name="email"
+                        value={formDetails.email}
                         onChange={handleOnChange}
                         required
-                        placeholder="e.g., 0xhash123abcdefghijklmnopqrstuvwxyz0123456789"
+                        placeholder="Enter your email"
                     />
                 </div>
                 <div className="form-group">
                     <label>Password:</label>
                     <input
-                        type="text"
+                        type="password"
+                        name="password"
+                        value={formDetails.password}
                         onChange={handleOnChange}
                         required
-                        placeholder="e.g., 0x1A2B3C4D5E6F7A8B9C0D1E2F3A4B5C6D7E8F9A0B"
+                        placeholder="Enter your password"
                     />
                 </div>  
-                <button onclick={handleOnClick}
+                <button
                     type="submit"
                     className="submit-button"
                 >Login</button>

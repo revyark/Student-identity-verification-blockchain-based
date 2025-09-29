@@ -4,26 +4,28 @@ import './IssueCredentialForm.css'; // Import the new CSS file
 
 const IssueCredentialForm = () => {
     const [studentAddress, setStudentAddress] = useState('');
+    const [credentialName, setCredentialName] = useState('');
     const [credentialType, setCredentialType] = useState('');
+    const [expiryDate, setExpiryDate] = useState('');
+    const [credentialScore, setCredentialScore] = useState('');
+    const [issuerSignature, setIssuerSignature] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
-    const [mockIpfsHash, setMockIpfsHash] = useState('');
+    const [uploadedFileInfo, setUploadedFileInfo] = useState(null); // cloudinary response
     const [status, setStatus] = useState('');
-    const [mockTxHash, setMockTxHash] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
 
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
-        setMockIpfsHash('');
+        setUploadedFileInfo(null);
     };
 
     const handleIssueCredential = async (e) => {
         e.preventDefault();
-        setStatus('Simulating credential issuance...');
-        setMockTxHash('');
+        setStatus('Processing...');
         setIsProcessing(true);
 
-        if (!studentAddress.trim() || !credentialType.trim() || !selectedFile) {
-            setStatus('Error: Please fill all fields and select a file.');
+        if (!studentAddress.trim() || !credentialType.trim() || !credentialName.trim() || !issuerSignature.trim() || !selectedFile) {
+            setStatus('Error: Please fill all required fields and select a file.');
             setIsProcessing(false);
             return;
         }
@@ -33,39 +35,74 @@ const IssueCredentialForm = () => {
             return;
         }
 
-        console.log("Dummy issuing credential with data:", {
-            studentAddress,
-            credentialType,
-            fileName: selectedFile.name,
-            fileSize: selectedFile.size,
-            issuanceTimestamp: new Date().toISOString()
-        });
+        try {
+            // 1) Upload file to Cloudinary via backend
+            const institute = JSON.parse(localStorage.getItem('institute') || '{}');
+            const instituteId = institute?._id || 'institute';
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            const uploadResp = await fetch(`http://localhost:8000/api/institute/${instituteId}/credentials/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const uploadJson = await uploadResp.json();
+            if (!uploadResp.ok) {
+                setStatus(uploadJson.message || 'Upload failed');
+                setIsProcessing(false);
+                return;
+            }
+            setUploadedFileInfo(uploadJson);
 
-        setStatus("Simulating file upload to IPFS...");
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        const generatedMockIpfsHash = `QmV${Math.random().toString(36).substring(2, 15)}`;
-        setMockIpfsHash(generatedMockIpfsHash);
-        setStatus(`Dummy IPFS upload complete: ${generatedMockIpfsHash}`);
+            // Use Cloudinary public_id as credentialHash for uniqueness
+            const credentialHash = uploadJson.public_id;
 
-        setStatus('Simulating blockchain transaction...');
-        await new Promise(resolve => setTimeout(resolve, 2500));
+            // 2) Issue credential
+            const payload = {
+                credentialName,
+                isssuerWalletAddress: institute?.walletAddress || '',
+                studentWalletAddress: studentAddress,
+                credentialHash,
+                credentialType,
+                issueDate: new Date().toISOString(),
+                expiryDate: expiryDate || undefined,
+                issuerSignature,
+                cloudinaryUrl: uploadJson.url,
+                credentialScore: credentialScore ? Number(credentialScore) : undefined
+            };
 
-        const generatedMockHash = '0x' + Math.random().toString(16).substr(2, 64);
-        setMockTxHash(generatedMockHash);
-        setStatus('Dummy credential issued successfully! (Check console for mock data)');
+            const issueResp = await fetch(`http://localhost:8000/api/institute/${instituteId}/credentials/issue`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const issueJson = await issueResp.json();
+            if (!issueResp.ok) {
+                setStatus(issueJson.message || 'Issue failed');
+                setIsProcessing(false);
+                return;
+            }
 
-        setStudentAddress('');
-        setCredentialType('');
-        setSelectedFile(null);
-        setMockIpfsHash('');
-        e.target.reset();
+            setStatus('Credential issued successfully');
 
-        setIsProcessing(false);
+            // Reset form
+            setStudentAddress('');
+            setCredentialName('');
+            setCredentialType('');
+            setExpiryDate('');
+            setCredentialScore('');
+            setIssuerSignature('');
+            setSelectedFile(null);
+        } catch (err) {
+            console.error(err);
+            setStatus('Error: Something went wrong');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
         <div className="credential-form-container">
-            <h2>Issue New Credential (DUMMY)</h2>
+            <h2>Issue New Credential</h2>
             <form onSubmit={handleIssueCredential}>
                 <div className="form-group">
                     <label>Student Wallet Address:</label>
@@ -75,6 +112,16 @@ const IssueCredentialForm = () => {
                         onChange={(e) => setStudentAddress(e.target.value)}
                         required
                         placeholder="e.g., 0xabcdef123..."
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Credential Name:</label>
+                    <input
+                        type="text"
+                        value={credentialName}
+                        onChange={(e) => setCredentialName(e.target.value)}
+                        required
+                        placeholder="e.g., Bachelor of Technology"
                     />
                 </div>
                 <div className="form-group">
@@ -88,6 +135,33 @@ const IssueCredentialForm = () => {
                     />
                 </div>
                 <div className="form-group">
+                    <label>Expiry Date (optional):</label>
+                    <input
+                        type="date"
+                        value={expiryDate}
+                        onChange={(e) => setExpiryDate(e.target.value)}
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Credential Score (optional):</label>
+                    <input
+                        type="number"
+                        value={credentialScore}
+                        onChange={(e) => setCredentialScore(e.target.value)}
+                        placeholder="e.g., 95"
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Issuer Signature:</label>
+                    <input
+                        type="text"
+                        value={issuerSignature}
+                        onChange={(e) => setIssuerSignature(e.target.value)}
+                        required
+                        placeholder="Provide issuer signature"
+                    />
+                </div>
+                <div className="form-group">
                     <label>Upload Credential Document (e.g., PDF):</label>
                     <input
                         type="file"
@@ -96,7 +170,9 @@ const IssueCredentialForm = () => {
                         accept=".pdf,.doc,.docx"
                     />
                     {selectedFile && <p className="file-info">Selected: {selectedFile.name}</p>}
-                    {mockIpfsHash && <p className="ipfs-info">Mock IPFS Hash: {mockIpfsHash}</p>}
+                    {uploadedFileInfo?.url && (
+                        <p className="ipfs-info">Uploaded URL: <a href={uploadedFileInfo.url} target="_blank" rel="noreferrer">{uploadedFileInfo.url}</a></p>
+                    )}
                 </div>
 
                 <button
@@ -104,21 +180,11 @@ const IssueCredentialForm = () => {
                     disabled={isProcessing}
                     className="submit-button"
                 >
-                    {isProcessing ? 'Processing...' : 'Issue Dummy Credential'}
+                    {isProcessing ? 'Processing...' : 'Issue Credential'}
                 </button>
             </form>
 
             {status && <p className={`status-message ${status.startsWith('Error') ? 'error' : (status.includes('successfully') ? 'success' : 'info')}`}>{status}</p>}
-            {mockTxHash && (
-                <p className="tx-hash-info">
-                    Mock Transaction Hash: <code>{mockTxHash}</code>
-                    <br/>
-                    (This is a dummy hash, no real transaction occurred.)
-                </p>
-            )}
-            <p className="note">
-                Note: This is a dummy form. It does not interact with a blockchain or actual IPFS.
-            </p>
         </div>
     );
 };

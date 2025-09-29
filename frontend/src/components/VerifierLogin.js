@@ -12,12 +12,26 @@ export default function VerifierLogin() {
     const handleOnSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Handle the login logic here
-            console.log('Verifier Login Data:', formDetails);
+            const response = await fetch('http://localhost:8000/api/login/verifier', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formDetails),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem('accessToken', data.accessToken);
+                localStorage.setItem('verifier', JSON.stringify(data.verifier));
+                localStorage.setItem('userType', 'verifier');
+                navigate('/verifier-dashboard');
+            } else {
+                alert(data.message || 'Login failed');
+            }
         } catch (err) {
             console.log(err);
+            alert('Login error');
         }
-        navigate('/verifier-dashboard');
     };
 
     const handleOnChange = (e) => {
