@@ -8,9 +8,9 @@ const studentRegistryABI = JSON.parse(fs.readFileSync("./abis/studentRegistry.js
 const verifiedInstitutesABI = JSON.parse(fs.readFileSync("./abis/verifiedInstitutions.json", "utf8"));
 const certificatesABI=JSON.parse(fs.readFileSync("./abis/certificates.json","utf8"));
 
-const web3 = new Web3(process.env.ALCHEMY_URL);
+const web3 = new Web3(process.env.ALCHEMY_API_URL);
 
-let pk = process.env.PRIVATE_KEY.trim();
+let pk = process.env.PRIVATE_KEY;
 
 // Ensure it has "0x" prefix
 if (!pk.startsWith("0x")) {
@@ -31,5 +31,8 @@ console.log("✅ Using blockchain account:", account.address);
 console.log("✅ Connected to contract at:", process.env.VERIFIED_CONTRACT_ADDRESS);
 console.log("✅ Connected to contract at:", process.env.CERTIFICATE_CONTRACT_ADDRESS);
 console.log("✅ Connected to contract at:", process.env.STUDENT_REGISTRY_CONTRACT_ADDRESS);
+const chainId = await web3.eth.getChainId();
+console.log("Connected to chain:", chainId); // should log 11155111 for Sepolia
+
 
 export { web3, verified_contract,student_registry,certificates,account };

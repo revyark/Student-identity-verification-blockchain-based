@@ -8,7 +8,7 @@ import HomePage from './pages/Homepage.js'; // or './pages/LandingPage'
 import IssueCredentialForm from './components/Institution/IssueCredentialForm'; // Dummy version
 import VerifyCredential from './components/Verifier/VerifyCredential'; // Dummy version
 import Background from './components/Background.js';
-import StudentUpload from './components/Studentupload';
+import StudentUpload from './components/Student/Studentupload';
 import Login from './components/Login.js';
 import Signup from './components/Signup.js';
 import InstituteLogin from './components/InstituteLogin.js';
