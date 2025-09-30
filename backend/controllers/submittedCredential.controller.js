@@ -4,6 +4,7 @@ import { Student } from "../models/user.models.js";
 import { Verifier } from "../models/verifier.models.js";
 import cloudinary from "../config/cloudinary.js";
 import crypto from "crypto";
+import { generateCredentialHash, generateContentHash, generateCredentialId } from "../utils/hashGenerator.js";
 
 // POST /api/submitted-credentials/upload
 const uploadStudentDocument = asyncHandler(async (req, res) => {
@@ -42,29 +43,25 @@ const uploadStudentDocument = asyncHandler(async (req, res) => {
       });
     }
 
+    // Generate both content hash (for matching) and credential hash (for blockchain)
+    const contentHash = generateContentHash(req.file.path);
+    const credentialHash = generateCredentialHash(req.file.path, studentWalletAddress, verifier.walletAddress);
+
     // Upload file to Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: "student-credentials",
       resource_type: "auto"
     });
 
-    // Generate credential hash
-    const credentialHash = crypto
-      .createHash("sha256")
-      .update(result.public_id + studentWalletAddress + verifier.walletAddress + Date.now())
-      .digest("hex");
-
     // Generate unique ID for the submitted credential
-    const credentialId = crypto
-      .createHash("md5")
-      .update(credentialHash + Date.now())
-      .digest("hex");
+    const credentialId = generateCredentialId(credentialHash);
 
     // Create submitted credential record
     const submittedCredential = await SubmittedCredential.create({
       _id: credentialId,
       studentWalletAddress,
       verifierWalletAddress: verifier.walletAddress,
+      contentHash,
       credentialHash,
       submissionDate: new Date(),
       cloudinaryUrl: result.secure_url,
@@ -78,6 +75,7 @@ const uploadStudentDocument = asyncHandler(async (req, res) => {
       message: "Document uploaded successfully",
       data: {
         credentialId: submittedCredential._id,
+        contentHash: submittedCredential.contentHash,
         credentialHash: submittedCredential.credentialHash,
         cloudinaryUrl: submittedCredential.cloudinaryUrl,
         submissionDate: submittedCredential.submissionDate,

@@ -41,6 +41,8 @@ const IssueCredentialForm = () => {
             const instituteId = institute?._id || 'institute';
             const formData = new FormData();
             formData.append('file', selectedFile);
+            formData.append('studentWalletAddress', studentAddress);
+            formData.append('issuerWalletAddress', institute?.walletAddress || '');
             const uploadResp = await fetch(`http://localhost:8000/api/institute/${instituteId}/credentials/upload`, {
                 method: 'POST',
                 body: formData
@@ -53,14 +55,16 @@ const IssueCredentialForm = () => {
             }
             setUploadedFileInfo(uploadJson);
 
-            // Use Cloudinary public_id as credentialHash for uniqueness
-            const credentialHash = uploadJson.public_id;
+            // Use the credential hash generated from file content
+            const credentialHash = uploadJson.credentialHash;
+            const contentHash = uploadJson.contentHash;
 
             // 2) Issue credential
             const payload = {
                 credentialName,
                 isssuerWalletAddress: institute?.walletAddress || '',
                 studentWalletAddress: studentAddress,
+                contentHash,
                 credentialHash,
                 credentialType,
                 issueDate: new Date().toISOString(),
@@ -75,9 +79,33 @@ const IssueCredentialForm = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            const issueJson = await issueResp.json();
+
+            // Check if response is ok and has content
             if (!issueResp.ok) {
-                setStatus(issueJson.message || 'Issue failed');
+                const errorText = await issueResp.text();
+                console.error('Issue API Error Response:', errorText);
+                setStatus(`API Error: ${issueResp.status} - ${errorText}`);
+                setIsProcessing(false);
+                return;
+            }
+
+            // Check if response has content
+            const responseText = await issueResp.text();
+            console.log('Raw Issue API Response:', responseText);
+            
+            if (!responseText) {
+                setStatus('Empty response from server');
+                setIsProcessing(false);
+                return;
+            }
+
+            let issueJson;
+            try {
+                issueJson = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('JSON Parse Error:', parseError);
+                console.error('Response text:', responseText);
+                setStatus(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
                 setIsProcessing(false);
                 return;
             }

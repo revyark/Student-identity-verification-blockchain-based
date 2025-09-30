@@ -12,8 +12,24 @@ const VerifierDashboard = () => {
     fetchCredentials();
   }, []);
 
+  const testVerificationAPI = async () => {
+    try {
+      console.log('Testing verification API...');
+      const response = await fetch('http://localhost:8000/api/verification/test');
+      const result = await response.json();
+      console.log('API Test Result:', result);
+      return result;
+    } catch (error) {
+      console.error('API Test Failed:', error);
+      return null;
+    }
+  };
+
   const fetchCredentials = async () => {
     try {
+      // Test the verification API first
+      await testVerificationAPI();
+      
       const verifierData = JSON.parse(localStorage.getItem('verifier'));
       if (!verifierData || !verifierData.walletAddress) {
         setError('Verifier not logged in');
@@ -37,22 +53,89 @@ const VerifierDashboard = () => {
     }
   };
 
-  const verifyDocument = async (credentialId, credentialHash) => {
+  const verifyDocument = async (credentialId, credentialHash, studentWalletAddress) => {
     try {
-      // Dummy verification logic - in real implementation, this would call blockchain
-      const isValid = credentialHash.endsWith("5") || Math.random() > 0.3;
-
-      setVerificationResults(prev => ({
-        ...prev,
-        [credentialId]: {
-          status: isValid ? "✅ Verified" : "❌ Verification Failed",
-          verifiedOn: new Date().toLocaleString(),
-          verified: isValid
-        }
-      }));
-
-      // Here you would typically call a blockchain verification API
       console.log(`Verifying credential ${credentialId} with hash ${credentialHash}`);
+      
+      // Call the blockchain verification API
+      const response = await fetch('http://localhost:8000/api/verification/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          credentialId,
+          studentWalletAddress,
+          credentialHash
+        })
+      });
+
+      // Check if response is ok and has content
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
+      }
+
+      // Check if response has content
+      const responseText = await response.text();
+      console.log('Raw API Response:', responseText);
+      
+      if (!responseText) {
+        throw new Error('Empty response from server');
+      }
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError);
+        console.error('Response text:', responseText);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+      }
+
+      if (result.success) {
+        const verification = result.data.verification;
+        const isValid = verification.isValid;
+        
+        setVerificationResults(prev => ({
+          ...prev,
+          [credentialId]: {
+            status: isValid ? "✅ Verified" : "❌ Verification Failed",
+            verifiedOn: new Date().toLocaleString(),
+            verified: isValid,
+            details: {
+              issuedBy: verification.issuedBy,
+              issuedAt: verification.issuedAt,
+              isRevoked: verification.isRevoked,
+              student: result.data.student,
+              issuer: result.data.issuer
+            }
+          }
+        }));
+
+        console.log(`✅ Verification completed for credential ${credentialId}:`, result.data);
+      } else {
+        // Handle verification failure (including "not found on blockchain")
+        setVerificationResults(prev => ({
+          ...prev,
+          [credentialId]: {
+            status: "❌ Verification Failed",
+            verifiedOn: new Date().toLocaleString(),
+            verified: false,
+            details: {
+              issuedBy: result.data?.verification?.issuedBy || null,
+              issuedAt: result.data?.verification?.issuedAt || null,
+              isRevoked: result.data?.verification?.isRevoked || false,
+              student: result.data?.student || null,
+              issuer: result.data?.issuer || null
+            },
+            error: result.message || 'Verification failed'
+          }
+        }));
+        
+        console.log(`❌ Verification failed for credential ${credentialId}:`, result.message);
+      }
     } catch (error) {
       console.error('Verification error:', error);
       setVerificationResults(prev => ({
@@ -60,7 +143,8 @@ const VerifierDashboard = () => {
         [credentialId]: {
           status: "❌ Verification Failed",
           verifiedOn: new Date().toLocaleString(),
-          verified: false
+          verified: false,
+          error: error.message
         }
       }));
     }
@@ -180,7 +264,7 @@ const VerifierDashboard = () => {
                       <div className="action-buttons">
                         <button 
                           className="verify-btn"
-                          onClick={() => verifyDocument(cred.credentialId, cred.credentialHash)}
+                          onClick={() => verifyDocument(cred.credentialId, cred.credentialHash, cred.studentWalletAddress)}
                         >
                           ✅ Verify
                         </button>
@@ -196,6 +280,22 @@ const VerifierDashboard = () => {
                               {verificationResults[cred.credentialId].status}
                             </p>
                             <small>{verificationResults[cred.credentialId].verifiedOn}</small>
+                            {verificationResults[cred.credentialId].details && (
+                              <div className="verification-details">
+                                {verificationResults[cred.credentialId].details.issuedBy && (
+                                  <small>Issued by: {verificationResults[cred.credentialId].details.issuedBy.slice(0, 10)}...</small>
+                                )}
+                                {verificationResults[cred.credentialId].details.issuedAt && (
+                                  <small>Issued: {new Date(verificationResults[cred.credentialId].details.issuedAt).toLocaleDateString()}</small>
+                                )}
+                                {verificationResults[cred.credentialId].details.isRevoked && (
+                                  <small className="revoked">⚠️ Revoked</small>
+                                )}
+                              </div>
+                            )}
+                            {verificationResults[cred.credentialId].error && (
+                              <small className="error">Error: {verificationResults[cred.credentialId].error}</small>
+                            )}
                           </div>
                         )}
                         {reportResults[cred.credentialId] && (

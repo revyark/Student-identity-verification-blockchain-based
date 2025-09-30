@@ -16,6 +16,10 @@ const submittedCredentialSchema=new Schema(
             type:String,
             required:true
         },
+        contentHash:{
+            type:String,
+            required:true
+        },
         credentialHash:{
             type:String,
             required:true

@@ -13,6 +13,15 @@ const upload = multer({ dest: uploadDir });
 
 const router = Router();
 
+// Test endpoint
+router.get('/test', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: "Institute API is working",
+    timestamp: new Date().toISOString()
+  });
+});
+
 router.get('/:id/profile', getInstituteProfile);
 router.put('/:id/profile', updateInstituteProfile);
 router.get('/:id/stats', getInstituteStats);
